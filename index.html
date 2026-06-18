@@ -2399,7 +2399,7 @@ async function sendWardrobeChat() {
   var s = calcSizes(parseFloat(data.vita)||0,parseFloat(data.fianchi)||0,parseFloat(data.torace)||0,parseFloat(data.collo)||0,parseFloat(data.altezza)||0);
   var sys = 'Sei un consulente di moda esperto. Rispondi in italiano, pratico. Max 4 frasi.\nMISURAZIONI: Vita:'+(data.vita||'?')+'cm Torace:'+(data.torace||'?')+'cm Collo:'+(data.collo||'?')+'cm Altezza:'+(data.altezza||'?')+'cm Peso:'+(data.peso||'?')+'kg\nTAGLIE: Pantaloni EU:'+(s.pantaloni_eu||'?')+' Camicia:'+(s.camicia_eu||'?')+' T-shirt:'+(s.tshirt||'?')+' Giacca IT:'+(s.giacca_it||'?')+'\nIl paziente sta dimagrendo ~1kg/sett con tirzepatide.';
   try {
-    var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:sys,messages:wardrobeChatHistory})});
+    var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,system:sys,messages:wardrobeChatHistory})});
     var d = await resp.json();
     var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore.';
     wardrobeChatHistory.push({ role:'assistant', content:reply });
@@ -2436,7 +2436,7 @@ async function analyzeBarbaWithAI() {
   document.getElementById('barbAnalyzeBtn').disabled = true;
   var prompt = 'Sei un dermatologo esperto in skincare maschile. Analizza questa foto della zona barba in italiano.\nPaziente: pelle grassa/mista, tirzepatide+metformina, routine: CeraVe Hydrating Cleanser, Timeless Vit.C 20%, CeraVe PM, LRP Anthelios SPF50+, Anua TXA sera.\nRispondi SOLO con JSON:\n{"stato_generale":"1-2 frasi","tipo_pelo":"descrizione","criticita":["criticita"],"punti_forza":["forza"],"tecnica_rasatura":"consiglio","prodotti_consigliati":["prod + ingrediente"],"prodotti_evitare":["da evitare"],"frequenza_consigliata":"frequenza","priorita":"cosa fare subito"}';
   try {
-    var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:barbImageType,data:barbImageBase64}},{type:'text',text:prompt}]}]})});
+    var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:barbImageType,data:barbImageBase64}},{type:'text',text:prompt}]}]})});
     var data = await resp.json();
     var raw = (data.content||[]).map(function(i){return i.text||'';}).join('');
     var r = JSON.parse(raw.replace(/```json|```/g,'').trim());
@@ -2490,7 +2490,7 @@ async function sendBarbChat() {
   var r = barbAnalysisResult || {};
   var sys = 'Sei un dermatologo esperto in rasatura maschile. Rispondi in italiano, breve (max 4 frasi).\nANALISI BARBA: Stato:'+(r.stato_generale||'?')+' Criticita:'+(r.criticita||[]).join(',')+' Prodotti consigliati:'+(r.prodotti_consigliati||[]).join(',')+' Da evitare:'+(r.prodotti_evitare||[]).join(',')+'\nPaziente: pelle grassa, tirzepatide.';
   try {
-    var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:sys,messages:barbChatHistory})});
+    var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,system:sys,messages:barbChatHistory})});
     var d = await resp.json();
     var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore.';
     barbChatHistory.push({ role:'assistant', content:reply });
@@ -2660,7 +2660,7 @@ async function sendHealthChat() {
   var whtr = (vita && altezza) ? (vita/altezza).toFixed(2) : '?';
   var sys = 'Sei un medico internista esperto in endocrinologia. Rispondi in italiano, pratico, basato su evidenze. Max 5 frasi.\nDATE PAZIENTE: Peso:'+data.peso+'kg Vita:'+vita+'cm Altezza:'+altezza+'cm WHtR:'+whtr+' Perdita totale:'+wl+'kg\nTerapia: tirzepatide+metformina. Stack: creatina 10g, whey isolate, collagene, magnesio bisglicin., D3+K2, omega-3, astaxantina 12mg, licopene 20mg, serenoa repens.';
   try {
-    var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:sys,messages:healthChatHistory})});
+    var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system:sys,messages:healthChatHistory})});
     var d = await resp.json();
     var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore.';
     healthChatHistory.push({ role:'assistant', content:reply });
@@ -2981,7 +2981,7 @@ Rispondi SOLO con JSON valido:
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 600,
         messages: [{ role:'user', content: prompt }]
       })
@@ -3602,7 +3602,7 @@ Rispondi in questo formato esatto — usa emoji, sii diretto e concreto, non vag
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})
     });
     const data=await resp.json();
     if(data.error){showToast('Errore API: '+data.error.message,'error');return;}
