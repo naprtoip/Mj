@@ -1157,12 +1157,17 @@ body {
         </div>
 
         <!-- Photo area -->
-        <div id="aiPhotoArea" style="position:relative;width:100%;aspect-ratio:4/3;border-radius:var(--rsm);overflow:hidden;background:var(--paper3);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById('aiPhotoInput').click()">
+        <div id="aiPhotoArea" style="position:relative;width:100%;aspect-ratio:4/3;border-radius:var(--rsm);overflow:hidden;background:var(--paper3);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;margin-bottom:10px;">
           <div style="font-size:2.5rem;opacity:.4;">📸</div>
-          <div style="font-size:12px;color:var(--ink3);text-align:center;padding:0 20px;line-height:1.5;">Tocca per fotografare<br>o scegli dalla galleria</div>
+          <div style="font-size:12px;color:var(--ink3);text-align:center;padding:0 20px;line-height:1.5;">Scegli un'opzione qui sotto</div>
           <img id="aiPhotoPreview" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
         </div>
-        <input type="file" id="aiPhotoInput" accept="image/*" style="display:none" onchange="onPhotoSelected(this)">
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('aiPhotoInputCamera').click()">📷 Scatta foto</button>
+          <button type="button" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('aiPhotoInputGallery').click()">🖼️ Galleria</button>
+        </div>
+        <input type="file" id="aiPhotoInputCamera" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(this)">
+        <input type="file" id="aiPhotoInputGallery" accept="image/*" style="display:none" onchange="onPhotoSelected(this)">
 
         <!-- Context toggles -->
         <div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:7px;">Contesto per l'analisi</div>
@@ -1445,12 +1450,17 @@ body {
         <div style="font-size:11px;color:var(--ink3);margin-bottom:12px;line-height:1.6;">
           Fotografa la zona barba (guance, mento, collo) per ricevere consigli personalizzati su irritazione, ingrown hair e routine di rasatura.
         </div>
-        <div id="barbPhotoArea" style="position:relative;width:100%;aspect-ratio:4/3;border-radius:var(--rsm);overflow:hidden;background:var(--paper3);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById('barbPhotoInput').click()">
+        <div id="barbPhotoArea" style="position:relative;width:100%;aspect-ratio:4/3;border-radius:var(--rsm);overflow:hidden;background:var(--paper3);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;margin-bottom:10px;">
           <div style="font-size:2.5rem;opacity:.4;">🪒</div>
-          <div style="font-size:12px;color:var(--ink3);text-align:center;padding:0 20px;line-height:1.5;">Tocca per fotografare<br>zona barba</div>
+          <div style="font-size:12px;color:var(--ink3);text-align:center;padding:0 20px;line-height:1.5;">Scegli un'opzione qui sotto</div>
           <img id="barbPhotoPreview" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
         </div>
-        <input type="file" id="barbPhotoInput" accept="image/*" style="display:none" onchange="onBarbPhotoSelected(this)">
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('barbPhotoInputCamera').click()">📷 Scatta foto</button>
+          <button type="button" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('barbPhotoInputGallery').click()">🖼️ Galleria</button>
+        </div>
+        <input type="file" id="barbPhotoInputCamera" accept="image/*" capture="environment" style="display:none" onchange="onBarbPhotoSelected(this)">
+        <input type="file" id="barbPhotoInputGallery" accept="image/*" style="display:none" onchange="onBarbPhotoSelected(this)">
         <button class="btn btn-primary" id="barbAnalyzeBtn" onclick="analyzeBarbaWithAI()" style="gap:8px;">
           <span>🔬</span> Analizza zona barba
         </button>
@@ -1870,6 +1880,26 @@ let aiImageType = 'image/jpeg';
 
 // ── API KEY ──
 function getApiKey() { return localStorage.getItem('mj_apikey') || ''; }
+
+// ── HELPER: messaggio di errore chiaro per chiamate API (crediti, chiave, rete...) ──
+async function getApiErrorDetail(resp) {
+  let body = {};
+  try { body = await resp.json(); } catch(e) {}
+  const apiMsg = body?.error?.message || '';
+  const apiType = body?.error?.type || '';
+  if(resp.status === 401) return { short: 'Chiave API non valida', full: 'Chiave API non valida o revocata. Controlla su console.anthropic.com.' };
+  if(resp.status === 403) return { short: 'Accesso negato', full: 'Accesso negato dalla chiave API — controlla i permessi.' };
+  if(resp.status === 429 || apiType === 'rate_limit_error') {
+    if(/credit/i.test(apiMsg)) return { short: 'Crediti esauriti', full: 'Crediti esauriti — ricarica su console.anthropic.com → Fatturazione.' };
+    return { short: 'Troppe richieste', full: 'Troppe richieste in poco tempo — attendi qualche istante e riprova.' };
+  }
+  if(resp.status === 400 && /credit/i.test(apiMsg)) return { short: 'Crediti esauriti', full: 'Crediti esauriti — ricarica su console.anthropic.com → Fatturazione.' };
+  if(resp.status === 400) return { short: 'Richiesta non valida', full: apiMsg || 'Richiesta non valida.' };
+  if(resp.status === 500 || resp.status === 529) return { short: 'Server non disponibile', full: 'Server Anthropic temporaneamente non disponibile — riprova tra poco.' };
+  if(apiMsg) return { short: 'Errore API', full: apiMsg };
+  return { short: 'Errore ' + resp.status, full: 'Errore sconosciuto (status ' + resp.status + ').' };
+}
+
 function saveApiKey() {
   const val = document.getElementById('apikeyInput').value.trim();
   if(!val.startsWith('sk-')) { showToast('Chiave non valida', 'error'); return; }
@@ -2257,6 +2287,13 @@ async function sendChat() {
         messages: skinChatHistory
       })
     });
+    if(!resp.ok) {
+      const errInfo = await getApiErrorDetail(resp);
+      loadBubble.classList.remove('loading');
+      loadBubble.innerHTML = '<div class="bubble-label">Dermatologa AI</div><span style="color:var(--rose)">⚠️ ' + errInfo.full + '</span>';
+      if(resp.status === 401) openApikeyModal();
+      return;
+    }
     const data = await resp.json();
     const reply = (data.content || []).map(function(i){return i.text||'';}).join('') || 'Errore nella risposta.';
     skinChatHistory.push({ role: 'assistant', content: reply });
@@ -2264,7 +2301,7 @@ async function sendChat() {
     loadBubble.innerHTML = '<div class="bubble-label">Dermatologa AI</div>' + reply.replace(/\n/g, '<br>');
     document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
   } catch(err) {
-    loadBubble.innerHTML = '<div class="bubble-label">Dermatologa AI</div>Errore di connessione. Riprova.';
+    loadBubble.innerHTML = '<div class="bubble-label">Dermatologa AI</div><span style="color:var(--rose)">⚠️ Errore di rete — controlla la connessione e riprova.</span>';
     loadBubble.classList.remove('loading');
   } finally {
     btn.disabled = false;
@@ -2409,13 +2446,20 @@ async function sendWardrobeChat() {
   var sys = 'Sei un consulente di moda esperto. Rispondi in italiano, pratico. Max 4 frasi.\nMISURAZIONI: Vita:'+(data.vita||'?')+'cm Torace:'+(data.torace||'?')+'cm Collo:'+(data.collo||'?')+'cm Altezza:'+(data.altezza||'?')+'cm Peso:'+(data.peso||'?')+'kg\nTAGLIE: Pantaloni EU:'+(s.pantaloni_eu||'?')+' Camicia:'+(s.camicia_eu||'?')+' T-shirt:'+(s.tshirt||'?')+' Giacca IT:'+(s.giacca_it||'?')+'\nIl paziente sta dimagrendo ~1kg/sett con tirzepatide.';
   try {
     var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1400,system:sys,messages:wardrobeChatHistory})});
+    if(!resp.ok) {
+      var errInfo = await getApiErrorDetail(resp);
+      lb.classList.remove('loading');
+      lb.innerHTML = '<div class="bubble-label">Consulente Taglie AI</div><span style="color:var(--rose)">⚠️ ' + errInfo.full + '</span>';
+      if(resp.status === 401) openApikeyModal();
+      return;
+    }
     var d = await resp.json();
-    var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore.';
+    var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore nella risposta.';
     wardrobeChatHistory.push({ role:'assistant', content:reply });
     lb.classList.remove('loading');
     lb.innerHTML = '<div class="bubble-label">Consulente Taglie AI</div>' + reply.replace(/\n/g,'<br>');
     document.getElementById('wardrobeChatMessages').scrollTop = 99999;
-  } catch(e) { lb.innerHTML = '<div class="bubble-label">Consulente Taglie AI</div>Errore. Riprova.'; lb.classList.remove('loading'); }
+  } catch(e) { lb.innerHTML = '<div class="bubble-label">Consulente Taglie AI</div><span style="color:var(--rose)">⚠️ Errore di rete — controlla la connessione e riprova.</span>'; lb.classList.remove('loading'); }
   finally { btn.disabled = false; }
 }
 
@@ -2446,6 +2490,13 @@ async function analyzeBarbaWithAI() {
   var prompt = 'Sei un dermatologo esperto in skincare maschile. Analizza questa foto della zona barba in italiano.\nPaziente: pelle grassa/mista, tirzepatide+metformina, routine: CeraVe Hydrating Cleanser, Timeless Vit.C 20%, CeraVe PM, LRP Anthelios SPF50+, Anua TXA sera.\nRispondi SOLO con JSON:\n{"stato_generale":"1-2 frasi","tipo_pelo":"descrizione","criticita":["criticita"],"punti_forza":["forza"],"tecnica_rasatura":"consiglio","prodotti_consigliati":["prod + ingrediente"],"prodotti_evitare":["da evitare"],"frequenza_consigliata":"frequenza","priorita":"cosa fare subito"}';
   try {
     var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1700,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:barbImageType,data:barbImageBase64}},{type:'text',text:prompt}]}]})});
+    if(!resp.ok) {
+      var errInfo = await getApiErrorDetail(resp);
+      document.getElementById('barbResultContent').innerHTML = '<div style="color:var(--rose);font-size:12px;padding:10px 0">⚠️ ' + errInfo.full + '</div>';
+      document.getElementById('barbResultArea').style.display = 'block';
+      if(resp.status === 401) openApikeyModal();
+      return;
+    }
     var data = await resp.json();
     var raw = (data.content||[]).map(function(i){return i.text||'';}).join('');
     var r = JSON.parse(raw.replace(/```json|```/g,'').trim());
@@ -2454,7 +2505,7 @@ async function analyzeBarbaWithAI() {
     initBarbChat(r);
     showToast('Analisi zona barba completata','success');
   } catch(e) {
-    document.getElementById('barbResultContent').innerHTML = '<div style="color:var(--rose);font-size:12px;padding:10px 0">Errore analisi. Riprova.</div>';
+    document.getElementById('barbResultContent').innerHTML = '<div style="color:var(--rose);font-size:12px;padding:10px 0">⚠️ Errore durante l\'analisi: ' + (e?.message || 'controlla la connessione e riprova') + '</div>';
     document.getElementById('barbResultArea').style.display = 'block';
   } finally {
     document.getElementById('barbLoadingArea').style.display = 'none';
@@ -2500,12 +2551,19 @@ async function sendBarbChat() {
   var sys = 'Sei un dermatologo esperto in rasatura maschile. Rispondi in italiano, breve (max 4 frasi).\nANALISI BARBA: Stato:'+(r.stato_generale||'?')+' Criticita:'+(r.criticita||[]).join(',')+' Prodotti consigliati:'+(r.prodotti_consigliati||[]).join(',')+' Da evitare:'+(r.prodotti_evitare||[]).join(',')+'\nPaziente: pelle grassa, tirzepatide.';
   try {
     var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1400,system:sys,messages:barbChatHistory})});
+    if(!resp.ok) {
+      var errInfo = await getApiErrorDetail(resp);
+      lb.classList.remove('loading');
+      lb.innerHTML = '<div class="bubble-label">Dermatologo AI</div><span style="color:var(--rose)">⚠️ ' + errInfo.full + '</span>';
+      if(resp.status === 401) openApikeyModal();
+      return;
+    }
     var d = await resp.json();
-    var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore.';
+    var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore nella risposta.';
     barbChatHistory.push({ role:'assistant', content:reply });
     lb.classList.remove('loading'); lb.innerHTML = '<div class="bubble-label">Dermatologo AI</div>' + reply.replace(/\n/g,'<br>');
     document.getElementById('barbChatMessages').scrollTop = 99999;
-  } catch(e) { lb.innerHTML='<div class="bubble-label">Dermatologo AI</div>Errore. Riprova.'; lb.classList.remove('loading'); }
+  } catch(e) { lb.innerHTML='<div class="bubble-label">Dermatologo AI</div><span style="color:var(--rose)">⚠️ Errore di rete — controlla la connessione e riprova.</span>'; lb.classList.remove('loading'); }
   finally { btn.disabled = false; }
 }
 
@@ -2670,12 +2728,19 @@ async function sendHealthChat() {
   var sys = 'Sei un medico internista esperto in endocrinologia. Rispondi in italiano, pratico, basato su evidenze. Max 5 frasi.\nDATE PAZIENTE: Peso:'+data.peso+'kg Vita:'+vita+'cm Altezza:'+altezza+'cm WHtR:'+whtr+' Perdita totale:'+wl+'kg\nTerapia: tirzepatide+metformina. Stack: creatina 10g, whey isolate, collagene, magnesio bisglicin., D3+K2, omega-3, astaxantina 12mg, licopene 20mg, serenoa repens.';
   try {
     var resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,system:sys,messages:healthChatHistory})});
+    if(!resp.ok) {
+      var errInfo = await getApiErrorDetail(resp);
+      lb.classList.remove('loading');
+      lb.innerHTML = '<div class="bubble-label">Medico AI</div><span style="color:var(--rose)">⚠️ ' + errInfo.full + '</span>';
+      if(resp.status === 401) openApikeyModal();
+      return;
+    }
     var d = await resp.json();
-    var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore.';
+    var reply = (d.content||[]).map(function(i){return i.text||'';}).join('') || 'Errore nella risposta.';
     healthChatHistory.push({ role:'assistant', content:reply });
     lb.classList.remove('loading'); lb.innerHTML = '<div class="bubble-label">Medico AI</div>' + reply.replace(/\n/g,'<br>');
     document.getElementById('healthChatMessages').scrollTop = 99999;
-  } catch(e) { lb.innerHTML='<div class="bubble-label">Medico AI</div>Errore. Riprova.'; lb.classList.remove('loading'); }
+  } catch(e) { lb.innerHTML='<div class="bubble-label">Medico AI</div><span style="color:var(--rose)">⚠️ Errore di rete — controlla la connessione e riprova.</span>'; lb.classList.remove('loading'); }
   finally { btn.disabled = false; }
 }
 
@@ -2996,6 +3061,15 @@ Rispondi SOLO con JSON valido:
       })
     });
 
+    if(!resp.ok) {
+      const errInfo = await getApiErrorDetail(resp);
+      verdictEl.textContent = '⚠️ ' + errInfo.short;
+      verdictEl.className = 'pm-eval-verdict warn';
+      bodyEl.innerHTML = errInfo.full;
+      if(resp.status === 401) openApikeyModal();
+      return;
+    }
+
     const data = await resp.json();
     const raw = (data.content || []).map(i => i.text || '').join('');
     const clean = raw.replace(/```json|```/g, '').trim();
@@ -3022,9 +3096,9 @@ Rispondi SOLO con JSON valido:
     bodyEl.innerHTML = html;
 
   } catch(err) {
-    verdictEl.textContent = 'Errore valutazione';
+    verdictEl.textContent = '⚠️ Errore di rete';
     verdictEl.className = 'pm-eval-verdict warn';
-    bodyEl.innerHTML = 'Impossibile contattare l\'AI. Riprova.';
+    bodyEl.innerHTML = 'Impossibile contattare l\'AI — controlla la connessione e riprova.';
   }
 }
 
@@ -3614,7 +3688,12 @@ Rispondi in questo formato esatto — usa emoji, sii diretto e concreto, non vag
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2500,messages:[{role:'user',content:prompt}]})
     });
     const data=await resp.json();
-    if(data.error){showToast('Errore API: '+data.error.message,'error');return;}
+    if(!resp.ok || data.error){
+      const errInfo = await getApiErrorDetail({ status: resp.status, json: async () => data });
+      showToast(errInfo.full,'error');
+      if(resp.status === 401) openApikeyModal();
+      return;
+    }
     const text=data.content[0]?.text||'';
 
     // Render sections
