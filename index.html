@@ -2344,8 +2344,9 @@ function getLatestMeasurements() {
       if(!key || !key.startsWith('mj_day_')) continue;
       const d = JSON.parse(localStorage.getItem(key) || 'null');
       if(!d) continue;
-      if(d.vita || d.torace || d.collo || d.fianchi || d.peso) {
-        if(!latest || key > latest.key) latest = { key, d };
+      const m = d.measurements || {};
+      if(m.vita || m.torace || m.collo || m.fianchi || m.peso) {
+        if(!latest || key > latest.key) latest = { key, d: m };
       }
     }
   } catch(e) {}
@@ -2359,7 +2360,9 @@ function getAllMeasurementHistory() {
       const key = localStorage.key(i);
       if(!key || !key.startsWith('mj_day_')) continue;
       const d = JSON.parse(localStorage.getItem(key) || 'null');
-      if(d && (d.vita || d.peso)) hist.push({ date: key.replace('mj_day_',''), d });
+      if(!d) continue;
+      const m = d.measurements || {};
+      if(m.vita || m.peso) hist.push({ date: key.replace('mj_day_',''), d: m });
     }
   } catch(e) {}
   hist.sort((a,b) => a.date.localeCompare(b.date));
