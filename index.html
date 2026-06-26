@@ -1664,14 +1664,14 @@ body {
       <div class="sec-title">🤖 Consulta AI Salute</div>
       <div class="sec-tag" style="background:rgba(107,91,158,.12);color:var(--violet);">Chat</div>
     </div>
-    <div style="margin:0 12px 12px;">
+    <div style="margin:0 12px 70px;">
       <div class="chat-quick-btns" style="padding:0 0 10px;">
         <button class="chat-quick-btn" onclick="sendHealthQuick(this)">Rischio cardiovascolare attuale?</button>
         <button class="chat-quick-btn" onclick="sendHealthQuick(this)">Integratori prioritari oggi?</button>
         <button class="chat-quick-btn" onclick="sendHealthQuick(this)">Sonno e dimagrimento: come migliorare?</button>
         <button class="chat-quick-btn" onclick="sendHealthQuick(this)">Volume loss: cosa fare adesso?</button>
       </div>
-      <div class="chat-messages" id="healthChatMessages" style="max-height:280px;"></div>
+      <div class="chat-messages" id="healthChatMessages" style="max-height:220px;"></div>
       <div class="chat-input-row">
         <textarea id="healthChatInput" placeholder="Chiedi sulla tua salute generale..." rows="1"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"
@@ -2586,7 +2586,7 @@ function renderSalutePanel() {
 function renderCardioRisk() {
   var el = document.getElementById('cardioRiskContent'); if(!el) return;
   var data = getLatestMeasurements() || {};
-  var vita = parseFloat(data.vita)||0, altezza = parseFloat(data.altezza)||0;
+  var vita = parseFloat(data.vita)||0, altezza = parseFloat(data.altezza)||parseFloat(localStorage.getItem('mj_height'))||0;
   if(!vita || !altezza) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px;">Inserisci vita e altezza nelle Misurazioni.</div>'; return; }
   var whtr = vita / altezza;
   var risk = whtr < 0.4 ? 'Sottopeso' : whtr < 0.5 ? 'Ottimale' : whtr < 0.6 ? 'Aumentato' : 'Alto';
@@ -2726,7 +2726,7 @@ async function sendHealthChat() {
   var data = getLatestMeasurements() || {};
   var hist = getAllMeasurementHistory();
   var wl = hist.length >= 2 ? (parseFloat(hist[0].d.peso||0)-parseFloat(hist[hist.length-1].d.peso||0)).toFixed(1) : '?';
-  var vita = parseFloat(data.vita)||0, altezza = parseFloat(data.altezza)||0;
+  var vita = parseFloat(data.vita)||0, altezza = parseFloat(data.altezza)||parseFloat(localStorage.getItem('mj_height'))||0;
   var whtr = (vita && altezza) ? (vita/altezza).toFixed(2) : '?';
   var sys = 'Sei un medico internista esperto in endocrinologia. Rispondi in italiano, pratico, basato su evidenze. Max 5 frasi.\nDATE PAZIENTE: Peso:'+data.peso+'kg Vita:'+vita+'cm Altezza:'+altezza+'cm WHtR:'+whtr+' Perdita totale:'+wl+'kg\nTerapia: tirzepatide+metformina. Stack: creatina 10g, whey isolate, collagene, magnesio bisglicin., D3+K2, omega-3, astaxantina 12mg, licopene 20mg, serenoa repens.';
   try {
